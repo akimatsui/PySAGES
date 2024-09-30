@@ -1,8 +1,10 @@
 # SPDX-License-Identifier: MIT
 # See LICENSE.md and CONTRIBUTORS.md at https://github.com/SSAGESLabs/PySAGES
+from __future__ import annotations
 
 from inspect import Parameter, signature
 
+from ase.atoms import Atoms
 from ase.calculators.calculator import Calculator
 from jax import jit
 from jax import numpy as np
@@ -67,9 +69,13 @@ class Sampler(Calculator):
     def biased_forces(self):
         return view(copy(self._biased_forces, ToCPU()))
 
-    def calculate(self, atoms=None, **kwargs):
-        properties = kwargs.get("properties", self._default_properties)
-        system_changes = kwargs.get("system_changes", self._default_changes)
+    def calculate(
+        self, atoms: Atoms | None = None, properties: list | None = None, system_changes: list | None = None, **kwargs
+    ):
+        if properties is None:
+            properties = kwargs.get("properties", self._default_properties)
+        if system_changes is None:
+            system_changes = kwargs.get("system_changes", self._default_changes)
         self._calculator.calculate(atoms, properties, system_changes)
 
     def get_forces(self, atoms=None):
@@ -112,7 +118,7 @@ def take_snapshot(simulation, forces=None):
     origin = (0.0, 0.0, 0.0)
     dt = simulation.dt
 
-    # ASE doesn't use images explicitely
+    # ASE doesn't use images explicitly
     return Snapshot(positions, vel_mass, forces, ids, None, Box(H, origin), dt)
 
 
@@ -166,6 +172,6 @@ def bind(sampling_context: SamplingContext, callback: Callable, **kwargs):
     helpers = build_helpers(sampling_context, sampling_method)
     method_bundle = sampling_method.build(snapshot, helpers)
     sampler = Sampler(context, method_bundle, callback)
-    sampling_context.view = View((lambda: None))
+    sampling_context.view = View(lambda: None)
     sampling_context.run = context.run
     return sampler
