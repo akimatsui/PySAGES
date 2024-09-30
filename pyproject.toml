@@ -34,3 +34,99 @@ write_to = "pysages/_version.py"
 
 [tool.black]
 line-length = 100
+target-version = ['py312']
+include = '\.pyi?$'
+exclude = '''
+(
+  /(
+      \.eggs         # exclude a few common directories in the
+    | \.git          # root of the project
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | test_files
+    | data
+  )/
+)
+'''
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+lint.select = [
+    "B", # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "D", # pydocstyle
+    "E", # pycodestyle error
+    "EXE", # flake8-executable
+    "F", # pyflakes
+    "I", # isort
+    "ICN", # flake8-import-conventions
+    "ISC", # flake8-implicit-str-concat
+    "PD", # pandas-vet
+    "PERF", # perflint
+    "PIE", # flake8-pie
+    "PL", # pylint
+    "PT", # flake8-pytest-style
+    "PYI", # flakes8-pyi
+    "Q", # flake8-quotes
+    "RET", # flake8-return
+    "RSE", # flake8-raise
+    "RUF", # Ruff-specific rules
+    "SIM", # flake8-simplify
+    "SLOT", # flake8-slots
+    "TCH", # flake8-type-checking
+    "TID", # tidy imports
+    "TID", # flake8-tidy-imports
+    "UP", # pyupgrade
+    "W", # pycodestyle warning
+    "YTT", # flake8-2020
+]
+lint.ignore = [
+    "B019", # functools.lru_cache on methods can lead to memory leaks
+    "D105", # Missing docstring in magic method
+    "D205", # 1 blank line required between summary line and description
+    "D212", # Multi-line docstring summary should start at the first line
+    "PD901", # df-bad-var-name
+    "PERF203", # try-except-in-loop
+    "PLR", # pylint refactor
+    "PLW0603", # Using the global statement to update variables is discouraged
+    "PLW2901", # redefined-loop-name
+    "RET504", # unnecessary-assign
+    "SIM105", # Use contextlib.suppress(OSError) instead of try-except-pass
+]
+lint.pydocstyle.convention = "google"
+lint.isort.required-imports = ["from __future__ import annotations"]
+exclude = ["data/vasp/**/*"]
+extend-exclude = ["data/vasp/**/*"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"setup.py" = ["D"]
+"tasks.py" = ["D"]
+"tests/**/*" = ["D", "PERF"]
+"docs/**/*" = ["D"]
+"examples/**/*" = ["D"]
+
+[tool.pytest.ini_options]
+addopts = "--durations=30 --quiet -rXs --color=yes -p no:warnings"
+
+[tool.mypy]
+ignore_missing_imports = true
+explicit_package_bases = true
+no_implicit_optional = false
+exclude = ['examples', 'tests', "data/vasp/**/*"]
+
+[[tool.mypy.overrides]]
+module = ["requests.*", "tabulate.*"]
+ignore_missing_imports = true
+
+[tool.codespell]
+ignore-words-list = "mater,te,nd,bu"
+check-filenames = true
+skip = "pyproject.toml,poetry.lock,data/vasp/**/*"
