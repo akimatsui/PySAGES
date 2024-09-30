@@ -28,8 +28,13 @@ mypy = "^1.11.2"
 jupyterlab = "^4.2.5"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+requires = [
+  "cython>=0.29",
+  "numpy>=1.16",
+  "setuptools>=41.0",
+  "setuptools_scm[toml]>=6.0",
+  "wheel>=0.33",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
