@@ -1,11 +1,8 @@
 [tool.poetry]
-name = "my-pysages"
+name = "pysages"
 version = "0.1.0"
 description = "A brief description of your package"
 authors = ["Your Name <youremail@example.com>"]
-packages = [
-  { include = "pysages" }
-]
 
 [tool.poetry.dependencies]
 python = "^3.11"
@@ -14,6 +11,11 @@ numpy = "^1.26.4"
 setuptools = "^45.0"
 setuptools_scm = { version = "^6.0", extras = ["toml"] }
 wheel = "^0.33"
+jax = "^0.4.33"
+plum-dispatch = "^1.5.4"
+jaxlib = "^0.4.33"
+ase = "^3.23.0"
+numba = "^0.60.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.0"
