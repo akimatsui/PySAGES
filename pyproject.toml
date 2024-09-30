@@ -113,9 +113,6 @@ extend-exclude = ["data/vasp/**/*"]
 "docs/**/*" = ["D"]
 "examples/**/*" = ["D"]
 
-[tool.pytest.ini_options]
-addopts = "--durations=30 --quiet -rXs --color=yes -p no:warnings"
-
 [tool.mypy]
 ignore_missing_imports = true
 explicit_package_bases = true
