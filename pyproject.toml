@@ -21,6 +21,9 @@ black = "^23.0"
 
 [tool.poetry.group.dev.dependencies]
 pre-commit = "^3.8.0"
+ruff = "^0.6.8"
+mypy = "^1.11.2"
+jupyterlab = "^4.2.5"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
