@@ -1,11 +1,30 @@
-[build-system]
-requires = [
-  "cython>=0.29",
-  "numpy>=1.16",
-  "setuptools>=41.0",
-  "setuptools_scm[toml]>=6.0",
-  "wheel>=0.33",
+[tool.poetry]
+name = "my-pysages"
+version = "0.1.0"
+description = "A brief description of your package"
+authors = ["Your Name <youremail@example.com>"]
+packages = [
+  { include = "pysages" }
 ]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+cython = "^0.29"
+numpy = "^1.26.4"
+setuptools = "^45.0"
+setuptools_scm = { version = "^6.0", extras = ["toml"] }
+wheel = "^0.33"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.0"
+black = "^23.0"
+
+[tool.poetry.group.dev.dependencies]
+pre-commit = "^3.8.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
