@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 from inspect import Parameter, signature
+from typing import TYPE_CHECKING
 
-from ase.atoms import Atoms
 from ase.calculators.calculator import Calculator
+from ase.stress import full_3x3_to_voigt_6_stress
 from jax import jit
 from jax import numpy as np
 
-from pysages.backends.core import SamplingContext
 from pysages.backends.snapshot import (
     Box,
     HelperMethods,
@@ -20,6 +20,11 @@ from pysages.backends.snapshot import (
 from pysages.backends.utils import view
 from pysages.typing import Callable, NamedTuple
 from pysages.utils import ToCPU, copy
+
+if TYPE_CHECKING:
+    from ase.atoms import Atoms
+
+    from pysages.backends.core import SamplingContext
 
 
 class Sampler(Calculator):
@@ -35,9 +40,9 @@ class Sampler(Calculator):
 
         atoms = context.atoms
         self.implemented_properties = atoms.calc.implemented_properties
-        ps = set(self.implemented_properties).intersection(("energy", "forces"))
+        ps = set(self.implemented_properties).intersection(("energy", "forces", "stress"))
         err = "Calculator does not support 'energy' or 'forces' calculations"
-        assert len(ps) == 2, err
+        assert len(ps) >= 2, err
 
         self.atoms = atoms
         self.callback = callback
@@ -55,10 +60,12 @@ class Sampler(Calculator):
             if p not in self._default_properties:
                 self._default_properties.append(p)
         self._get_forces = atoms.calc.get_forces
+        if "stress" in self.implemented_properties:
+            self._get_stress = atoms.calc.get_stress
         self._md_step = context.step
 
         # Swap the original step method to add the bias
-        context.step = lambda: self._md_step(self.biased_forces)
+        # context.step = lambda: self._md_step(self.biased_forces)
         # Swap the atoms calculator with this wrapper
         atoms.calc = self
 
@@ -70,11 +77,15 @@ class Sampler(Calculator):
         return view(copy(self._biased_forces, ToCPU()))
 
     def calculate(
-        self, atoms: Atoms | None = None, properties: list | None = None, system_changes: list | None = None, **kwargs
+        self,
+        atoms: Atoms | None = None,
+        properties: list | None = None,
+        system_changes: list | None = None,
+        **kwargs,
     ):
-        if properties is None:
+        if properties is None or len(properties) == 0:
             properties = kwargs.get("properties", self._default_properties)
-        if system_changes is None:
+        if system_changes is None or len(system_changes) == 0:
             system_changes = kwargs.get("system_changes", self._default_changes)
         self._calculator.calculate(atoms, properties, system_changes)
 
@@ -90,6 +101,29 @@ class Sampler(Calculator):
             self.callback(self.snapshot, self.state, timestep)
         self._biased_forces = new_forces
         return self.biased_forces
+
+    def get_stress(self, atoms=None):
+        """Assuming you have already performed `self.get_forces`."""
+        _stress = self._get_stress(atoms=atoms)
+        bias = self.state.bias
+        positions = atoms.positions
+        s1, s2, s3, s4, s5, s6 = (
+            positions[:, 0] @ bias[:, 0].T,
+            positions[:, 1] @ bias[:, 1].T,
+            positions[:, 2] @ bias[:, 2].T,
+            positions[:, 1] @ bias[:, 2].T,
+            positions[:, 2] @ bias[:, 0].T,
+            positions[:, 0] @ bias[:, 1].T,
+        )
+        virial = np.array([[s1, s6, s5], [s6, s2, s4], [s5, s4, s3]]) / atoms.get_volume()
+        # print(f"{_stress=}, {virial=}")
+        if _stress.shape == (6,):
+            return _stress + full_3x3_to_voigt_6_stress(virial)
+        if _stress.shape == (3, 3):
+            return full_3x3_to_voigt_6_stress(_stress + virial)
+        raise ValueError(
+            "The shapes of the stress property are not the same from all calculators"
+        )
 
     def restore(self, prev_snapshot):
         atoms = self.atoms
@@ -122,7 +156,9 @@ def take_snapshot(simulation, forces=None):
     return Snapshot(positions, vel_mass, forces, ids, None, Box(H, origin), dt)
 
 
-def _calculator_defaults(sig, arg, default=[]):
+def _calculator_defaults(sig, arg, default=None):
+    if default is None:
+        default = []
     fallback = Parameter("_", Parameter.KEYWORD_ONLY, default=default)
     val = sig.get(arg, fallback).default
     return val if type(val) is list else default
